@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-npr-blue: #2C63AE; /* NPR blue */
+  --color-npr-blue-dark: #1E4C8D; /* NPR dark blue */
+  --color-npr-blue-night: #1D273B; /* NPR dark blue */
+  --color-npr-red: #DA252C; /* NPR red */
+  --color-npr-red-dark: #D42100;
+  --color-npr-dark: #222222; /* NPR dark text */
+  --color-npr-light: #F7F7F7; /* NPR light background */
+  --color-npr-gray: #E5E5E5; /* NPR gray */
+  --font-sans: 'Open Sans', sans-serif; 
+}
