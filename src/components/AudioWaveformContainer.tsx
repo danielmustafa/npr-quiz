@@ -12,6 +12,7 @@ interface OscilloscopeProps {
 }
 
 const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600, height = 120, className = "", onAudioIsReady: onAudioIsLoaded, playAudio = false, volume = .33 }) => {
+    console.log(url)
     const [audioIsLoading, setAudioIsLoading] = React.useState(false);
     const [audioIsLoaded, setAudioIsLoaded] = React.useState(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -23,11 +24,13 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600,
     const animationIdRef = useRef<number | null>(null);
 
     function handleAudioIsLoading(isLoading: boolean) {
+        console.log('loading audio')
         setAudioIsLoading(isLoading);
         onAudioIsLoaded(!isLoading);
     }
 
     function handleAudioIsLoaded(isLoaded: boolean) {
+        console.log('loaded audio')
         handleAudioIsLoading(!isLoaded);
         setAudioIsLoaded(isLoaded);
         onAudioIsLoaded(isLoaded);
@@ -105,48 +108,23 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600,
         };
     }, [url, playAudio, audioIsLoaded]);
 
-    // Controls
-    // const handlePlay = () => {
-    //     if (audioRef.current) {
-    //         audioRef.current.play();
-    //         audioCtxRef.current?.resume();
-    //     }
-    // };
-    // const handlePause = () => {
-    //     audioRef.current?.pause();
-    // };
-    // const handleStop = () => {
-    //     if (audioRef.current) {
-    //         audioRef.current.pause();
-    //         audioRef.current.currentTime = 0;
-    //     }
-    // };
 
     return (
         <div className={`flex flex-col items-center`}>
-            {/* {audioIsLoading ? <Loader className="w-8 h-8 text-gray-200 animate-spin fill-npr-blue" />
-                : <canvas
-                    ref={canvasRef}
-                    width={width}
-                    height={height}
-                    className="rounded bg-npr-light border border-npr-gray shadow" />} */}
             <canvas
+            className="bg-yellow-300"
                 ref={canvasRef}
                 width={width}
                 height={height}
                  />
             <audio
+                crossOrigin="anonymous"
                 ref={audioRef}
                 src={url}
                 className="hidden"
                 onLoadStart={() => handleAudioIsLoading(true)}
                 onLoadedData={() => handleAudioIsLoaded(true)}
                 onError={() => handleAudioIsLoading(false)} />
-            {/* <div className="flex gap-2 mt-2">
-                <button onClick={handlePlay} className="btn bg-npr-blue text-white px-4 py-1 rounded hover:bg-npr-blue-dark">Play</button>
-                <button onClick={handlePause} className="btn bg-npr-gray text-npr-dark px-4 py-1 rounded hover:bg-npr-blue-light">Pause</button>
-                <button onClick={handleStop} className="btn bg-npr-red text-white px-4 py-1 rounded hover:bg-npr-blue-dark">Stop</button>
-            </div> */}
         </div>
     );
 };

@@ -1,7 +1,8 @@
 import LandingPage from "./components/landing-page";
 import { useState } from "react";
 import QuestionPage from "./components/question-page";
-import { questions } from "./data/data";
+// import { questions } from "./data/data";
+import questions from "./data/data.json"
 
 // className="flex-row flex-nowrap items-center justify-center gap-2 text-3xl md:text-5xl font-extrabold text-gray-900 tracking-tight whitespace-nowrap w-full"
 
@@ -39,12 +40,10 @@ function App() {
     );  
   })
 
-  // return (questionPages[questionNumber])
-
-
-  return gameIsActive ? (questionPages[questionNumber]) : (
-    <LandingPage onStartClicked={handleStartClicked} />
-  )
+  return questionPages[0]
+  // return gameIsActive ? (questionPages[questionNumber]) : (
+  //   <LandingPage onStartClicked={handleStartClicked} />
+  // )
 
 }
 

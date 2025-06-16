@@ -6,15 +6,13 @@ import { Slider } from "./ui/slider";
 import Banner from "./ui/banner";
 interface Correspondent {
     id: number;
-    fullName: string;
-    gender: string;
+    fullname: string;
 }
 
 interface QuestionData {
-    audioUrl: string;
-    questionText: string;
+    audio_url: string;
     options: Correspondent[];
-    correctOptionId: number;
+    correspondent_id: number;
 }
 
 interface QuestionPageProps {
@@ -26,6 +24,11 @@ interface QuestionPageProps {
     onScoreUpdated: (updater: (prev: number) => number) => void;
 }
 
+interface OptionProps {
+    className: string;
+    enabled: boolean;
+}
+
 function QuestionPage(props: QuestionPageProps) {
     const { questionNumber, numberOfQuestions, totalScore, onContinueClicked, data, onScoreUpdated } = props;
 
@@ -35,6 +38,7 @@ function QuestionPage(props: QuestionPageProps) {
     const [audioUrl, setAudioUrl] = useState<string | undefined>(undefined);
     const [audioIsReady, setAudioIsReady] = useState(false);
     const [playAudio, setPlayAudio] = useState(false);
+    const [optionProps, setOptionProps] = useState<Record<string, OptionProps>>({});
 
     function endRound() {
         setRoundIsActive(false);
@@ -50,7 +54,7 @@ function QuestionPage(props: QuestionPageProps) {
         if (!roundIsActive) {
             setRoundIsActive(true);
             setPlayAudio(true);
-            setAudioUrl(data.audioUrl);
+            setAudioUrl(data.audio_url);
         }
     }
 
@@ -63,7 +67,19 @@ function QuestionPage(props: QuestionPageProps) {
     useEffect(() => {
         setRoundIsActive(true);
         setPlayAudio(true);
-        setAudioUrl(data.audioUrl);
+        setAudioUrl(data.audio_url);
+
+        const optionStyles: Record<string, OptionProps> = {}
+        data.options.forEach(option => {
+
+            optionStyles[option.id] = {
+                className: "w-full h-14",
+                enabled: true
+            }})
+
+        setOptionProps(optionStyles)
+
+        console.log(optionStyles)
     }, [data])
 
 
@@ -72,10 +88,19 @@ function QuestionPage(props: QuestionPageProps) {
     // }, [audioIsLoaded])
 
     function handleAnswerClicked(id: number): void {
-        if (id === data.correctOptionId) {
+        if (id === data.correspondent_id) {
             endRound();
         } else {
             setIncorrectAnswersCount((prev) => prev + 1);
+            setOptionProps((prev) => {
+                return {
+                    ...prev,
+                    [id]: {
+                        className: prev[id].className.concat(" animate-wobble bg-npr-red"),
+                        enabled: false
+                    }
+                }
+            })
         }
     }
 
@@ -94,12 +119,12 @@ function QuestionPage(props: QuestionPageProps) {
                     <QuestionTracker current={questionNumber} total={numberOfQuestions} />
                     <CurrentScoreTracker score={totalScore} />
                 </div>
-                <div id="bodyContainer" className="flex flex-row h-50 items-center p-6 gap-6 justify-between bg-npr-blue-dark">
+                <div id="bodyContainer" className="flex flex-row h-50 items-center p-6 justify-between bg-npr-blue-dark">
                     <AudioContainer
                         playAudio={playAudio}
                         audioUrl={audioUrl}
                         onAudioIsReady={setAudioIsReady} />
-                    <div className=" ">
+                    <div className="flex min-w-1/4 justify-end ">
                         <PossibleScoreTracker
                             incorrectAnswersCount={incorrectAnswersCount}
                             onRoundCompleted={handleRoundCompleted}
@@ -115,11 +140,12 @@ function QuestionPage(props: QuestionPageProps) {
                     {data.options.map((option) => {
                         return (
                             <Button
-                                disabled={!roundIsActive}
+                                variant="option"
+                                disabled={!roundIsActive || !optionProps[option.id].enabled}
                                 size={"lg"}
                                 onClick={() => handleAnswerClicked(option.id)}
                                 key={option.id}
-                                className="w-full h-14 text-npr-light bg-npr-blue hover:bg-npr-blue-night">{option.fullName}</Button>
+                                className={optionProps[option.id]?.className}>{option.fullname}</Button>
                         )
                     })}
                 </div>
@@ -274,24 +300,24 @@ function AudioContainer({ playAudio, audioUrl, onAudioIsReady }: { playAudio: bo
     </>)
 }
 
-function VolumeControl() {
-    const DEFAULT_MUTED_VOLUME = 0;
-    const DEFAULT_VOLUME: number = 0.33;
-    const [volume, setVolume] = useState([DEFAULT_VOLUME]);
+// function VolumeControl() {
+//     const DEFAULT_MUTED_VOLUME = 0;
+//     const DEFAULT_VOLUME: number = 0.33;
+//     const [volume, setVolume] = useState([DEFAULT_VOLUME]);
 
-    return (<div id="volumeControl" className="flex flex-col gap-2 h-full items-center rounded-md bg-npr-blue-dark text-npr-light">
-        <Slider
-            onValueChange={setVolume}
-            value={volume}
-            defaultValue={[DEFAULT_VOLUME]}
-            min={0}
-            max={1}
-            step={.01} />
-        {volume && volume[0] > DEFAULT_MUTED_VOLUME
-            ? <Volume2 onClick={() => setVolume([DEFAULT_MUTED_VOLUME])} />
-            : <VolumeX onClick={() => setVolume([DEFAULT_VOLUME])} />}
+//     return (<div id="volumeControl" className="flex flex-col gap-2 h-full items-center rounded-md bg-npr-blue-dark text-npr-light">
+//         <Slider
+//             onValueChange={setVolume}
+//             value={volume}
+//             defaultValue={[DEFAULT_VOLUME]}
+//             min={0}
+//             max={1}
+//             step={.01} />
+//         {volume && volume[0] > DEFAULT_MUTED_VOLUME
+//             ? <Volume2 onClick={() => setVolume([DEFAULT_MUTED_VOLUME])} />
+//             : <VolumeX onClick={() => setVolume([DEFAULT_VOLUME])} />}
 
-    </div>)
-}
+//     </div>)
+// }
 
 export default QuestionPage;
