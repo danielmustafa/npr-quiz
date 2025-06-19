@@ -49,11 +49,9 @@
     }
     25% {
       transform: translateX(-10px);
-      /* background-color: #DA252C; */
     }
     50% {
       transform: translateX(10px);
-      /* background-color: #DA252C; */
     }
   }
 }
