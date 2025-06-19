@@ -40,15 +40,11 @@ function App() {
     );  
   })
 
-  return questionPages[0]
-  // return gameIsActive ? (questionPages[questionNumber]) : (
-  //   <LandingPage onStartClicked={handleStartClicked} />
-  // )
+  // return questionPages[0]
+  return gameIsActive ? (questionPages[questionNumber]) : (
+    <LandingPage onStartClicked={handleStartClicked} />
+  )
 
 }
-
-// when a game starts, we should be holding a state to show the progress of the overall game.  For each round
-// it should render a new question and the score should be incremented.
-// They should be given a continue option that will inject the next question and progress the quiz.
 
 export default App;
