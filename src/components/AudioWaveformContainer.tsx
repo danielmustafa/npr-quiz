@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from "react";
-import Loader from "./Loader";
 
 interface OscilloscopeProps {
     url?: string;
@@ -11,9 +10,8 @@ interface OscilloscopeProps {
     playAudio: boolean;
 }
 
-const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600, height = 120, className = "", onAudioIsReady: onAudioIsLoaded, playAudio = false, volume = .33 }) => {
-    console.log(url)
-    const [audioIsLoading, setAudioIsLoading] = React.useState(false);
+const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600, height = 120, onAudioIsReady: onAudioIsLoaded, playAudio = false, volume = .33 }) => {
+    // const [audioIsLoading, setAudioIsLoading] = React.useState(false);
     const [audioIsLoaded, setAudioIsLoaded] = React.useState(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -25,7 +23,7 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600,
 
     function handleAudioIsLoading(isLoading: boolean) {
         console.log('loading audio')
-        setAudioIsLoading(isLoading);
+        // setAudioIsLoading(isLoading);
         onAudioIsLoaded(!isLoading);
     }
 

@@ -1,37 +1,72 @@
-import LandingPage from "./components/landing-page";
-import { useState } from "react";
-import QuestionPage from "./components/question-page";
-// import { questions } from "./data/data";
-import questions from "./data/data.json"
+import LandingPage from  "./pages/landing-page";
+import { useState, useEffect } from "react";
+import QuestionPage from  "./pages/question-page";
+import { useQuiz } from "./api/quizFetcher";
+import ResultsPage from "./pages/results-page";
+import { useQueryClient } from '@tanstack/react-query';
 
-// className="flex-row flex-nowrap items-center justify-center gap-2 text-3xl md:text-5xl font-extrabold text-gray-900 tracking-tight whitespace-nowrap w-full"
+enum GameState {
+  NOT_STARTED,
+  IN_PROGRESS,
+  FINISHED
+}
 
 function App() {
-  const [gameIsActive, setGameIsActive] = useState(false);
+  const queryClient = useQueryClient();
+  const [gameState, setGameState] = useState<GameState>(GameState.NOT_STARTED);
   const [questionNumber, setQuestionNumber] = useState(0);
   const [totalScore, setTotalScore] = useState(0);
-  const QUESTION_START_SCORE = 500;
-  const NUMBER_OF_QUESTIONS = 3;
+  const [numberOfQuestions, setNumberOfQuestions] = useState(0);
+
+  // const { isPending, isError, isSuccess, data, error } = useQuery({
+  //   queryKey: ['quiz'],
+  //   queryFn: fetchQuiz,
+  // })
+
+  const { isPending, isError, isSuccess, data, error } = useQuiz();
+
+  useEffect(() => {
+    if (data) {
+      console.log('updating')
+      // setNumberOfQuestions(data.metadata.total_questions);
+      setNumberOfQuestions(2);
+    }
+  }, [data])
+
+  useEffect(() => {
+    if (questionNumber > 0 && questionNumber >= numberOfQuestions) {
+      setGameState(GameState.FINISHED);
+    }
+  }, [questionNumber, numberOfQuestions])
+
 
   function handleStartClicked(): void {
-    setGameIsActive(true);
+    setGameState(GameState.IN_PROGRESS);
   }
 
   function handleContinueClicked(): void {
     setQuestionNumber((prev) => {
-      if (gameIsActive && prev <= NUMBER_OF_QUESTIONS) {
+      if (gameState === GameState.IN_PROGRESS && prev <= numberOfQuestions) {
         return prev + 1;
       }
       return prev;
     })
   }
 
-  const questionPages = questions.map((question, index) => {
+  function handleStartOverClicked(): void {
+    setGameState(GameState.NOT_STARTED);
+    setQuestionNumber(0);
+    setTotalScore(0);
+    setNumberOfQuestions(0);
+    queryClient.invalidateQueries({ queryKey: ['quiz'] });
+  }
+
+  const questionPages = data?.quiz?.map((question, index) => {
     return (
       <QuestionPage
         key={index}
         questionNumber={questionNumber + 1}
-        numberOfQuestions={NUMBER_OF_QUESTIONS}
+        numberOfQuestions={numberOfQuestions}
         totalScore={totalScore}
         data={question}
         onContinueClicked={handleContinueClicked}
@@ -40,10 +75,38 @@ function App() {
     );  
   })
 
+  //TODO should handle if questions are empty
+  const getActivePage = () => {
+    if (isPending) {
+      return <div className="text-center text-2xl">Loading...</div>
+    }
+    if (isError) {
+      return <div className="text-center text-2xl">Error: {error.message}</div>
+    }
+    if (isSuccess) {
+      switch (gameState) {
+        case GameState.NOT_STARTED:
+          return <LandingPage onStartClicked={handleStartClicked} />;
+        case GameState.IN_PROGRESS:
+          return questionPages && questionPages[questionNumber];
+        case GameState.FINISHED:
+          return <ResultsPage totalScore={totalScore} onStartOverClicked={handleStartOverClicked} />
+      }
+      // console.log(data)
+      // //game is ready to launch
+      // if (gameState === GameState.IN_PROGRESS) {
+      //   return questionPages && questionPages[questionNumber];
+      // } else {
+      //   return <LandingPage onStartClicked={handleStartClicked} />;
+      // }
+    }
+  }
+
+    return (getActivePage())
   // return questionPages[0]
-  return gameIsActive ? (questionPages[questionNumber]) : (
-    <LandingPage onStartClicked={handleStartClicked} />
-  )
+  // return gameIsActive ? (questionPages[questionNumber]) : (
+  //   <LandingPage onStartClicked={handleStartClicked} />
+  // )
 
 }
 

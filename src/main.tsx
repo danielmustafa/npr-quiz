@@ -1,10 +1,20 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query'
 import './index.css'
 import App from './App.tsx'
 
+const queryClient = new QueryClient()
+queryClient.setDefaultOptions({
+  queries: {
+    refetchOnWindowFocus: false,
+  }
+})
+
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+  <QueryClientProvider client={queryClient}>
+    <StrictMode>
+      <App />
+    </StrictMode>
+  </QueryClientProvider>,
 )
