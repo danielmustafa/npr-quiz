@@ -9,4 +9,4 @@ runConfig:
 # Environment variables and secrets
 env:
   - variable: VITE_QUIZ_API_URL
-    secret: projects/715361589173/secrets/quizApiUrl 
+    secret: quizApiUrl 
