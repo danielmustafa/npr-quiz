@@ -3,6 +3,8 @@ import type { Correspondent, QuestionData } from "@/types/question";
 import { useQuery } from "@tanstack/react-query";
 import { Buffer } from "buffer";
 import data2 from "../data/data2.json"
+
+const QUIZ_API_PATH = "/generate-quiz"
 const QUIZ_API_URL = import.meta.env.VITE_QUIZ_API_URL;
 // const QUIZ_API_TOKEN = import.meta.env.VITE_QUIZ_API_TOKEN;
 
@@ -28,7 +30,7 @@ interface QuizEncoded {
 export const fetchQuiz = async (): Promise<QuizEncoded> => {
   try {
     // console.log("Fetching quiz from:", QUIZ_API_URL);
-    const response = await axios.get(`${QUIZ_API_URL}`);
+    const response = await axios.get(`${QUIZ_API_URL}${QUIZ_API_PATH}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching quiz:", error);

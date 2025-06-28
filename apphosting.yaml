@@ -9,4 +9,4 @@ runConfig:
 # Environment variables and secrets
 env:
   - variable: VITE_QUIZ_API_URL
-    secret: https://audio-quiz-api-1014599277455.us-east1.run.app/generate-quiz
+    secret: quizApiUrl
