@@ -27,7 +27,7 @@ interface QuizEncoded {
 
 export const fetchQuiz = async (): Promise<QuizEncoded> => {
   try {
-    console.log("Fetching quiz from:", QUIZ_API_URL);
+    // console.log("Fetching quiz from:", QUIZ_API_URL);
     const response = await axios.get(`${QUIZ_API_URL}`, {
       headers: {
         Authorization: `Bearer ${QUIZ_API_TOKEN}`,
@@ -55,7 +55,6 @@ export const useQuiz = () => {
     queryKey: ['quiz'],
     queryFn: fetchQuiz,
     select: (data: QuizEncoded) => {
-      console.log('in usequery')
       return {
         quiz: data.quiz.map((question) => ({
           audio_url: question.audio_url,
