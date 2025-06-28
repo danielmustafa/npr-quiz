@@ -22,13 +22,13 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600,
     const animationIdRef = useRef<number | null>(null);
 
     function handleAudioIsLoading(isLoading: boolean) {
-        console.log('loading audio')
+        // console.log('loading audio')
         // setAudioIsLoading(isLoading);
         onAudioIsLoaded(!isLoading);
     }
 
     function handleAudioIsLoaded(isLoaded: boolean) {
-        console.log('loaded audio')
+        // console.log('loaded audio')
         handleAudioIsLoading(!isLoaded);
         setAudioIsLoaded(isLoaded);
         onAudioIsLoaded(isLoaded);

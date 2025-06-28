@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Buffer } from "buffer";
 import data2 from "../data/data2.json"
 const QUIZ_API_URL = import.meta.env.VITE_QUIZ_API_URL;
-const QUIZ_API_TOKEN = import.meta.env.VITE_QUIZ_API_TOKEN;
+// const QUIZ_API_TOKEN = import.meta.env.VITE_QUIZ_API_TOKEN;
 
 export interface QuizResponse {
   quiz: QuestionData[];
@@ -28,11 +28,7 @@ interface QuizEncoded {
 export const fetchQuiz = async (): Promise<QuizEncoded> => {
   try {
     // console.log("Fetching quiz from:", QUIZ_API_URL);
-    const response = await axios.get(`${QUIZ_API_URL}`, {
-      headers: {
-        Authorization: `Bearer ${QUIZ_API_TOKEN}`,
-      },
-    });
+    const response = await axios.get(`${QUIZ_API_URL}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching quiz:", error);
