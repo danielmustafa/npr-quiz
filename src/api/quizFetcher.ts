@@ -2,11 +2,10 @@ import axios from "axios";
 import type { Correspondent, QuestionData } from "@/types/question";
 import { useQuery } from "@tanstack/react-query";
 import { Buffer } from "buffer";
-import data2 from "../data/data2.json"
+// import data2 from "../data/data2.json"
 
 const QUIZ_API_PATH = "/generate-quiz"
 const QUIZ_API_URL = import.meta.env.VITE_QUIZ_API_URL;
-// const QUIZ_API_TOKEN = import.meta.env.VITE_QUIZ_API_TOKEN;
 
 export interface QuizResponse {
   quiz: QuestionData[];
@@ -38,9 +37,9 @@ export const fetchQuiz = async (): Promise<QuizEncoded> => {
   }
 };
 
-const dummyFetchQuiz = async (): Promise<QuizEncoded> => {
-  return Promise.resolve(data2 as QuizEncoded);
-}
+// const dummyFetchQuiz = async (): Promise<QuizEncoded> => {
+//   return Promise.resolve(data2 as QuizEncoded);
+// }
 
 const convert = (from: BufferEncoding, to: BufferEncoding) => (str: string): string =>
   Buffer.from(str, from).toString(to);
