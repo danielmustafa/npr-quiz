@@ -1,0 +1,12 @@
+# Settings for Cloud Run
+runConfig:
+  minInstances: 2
+  maxInstances: 100
+  concurrency: 100
+  cpu: 2
+  memoryMiB: 1024
+
+# Environment variables and secrets
+env:
+  - variable: VITE_QUIZ_API_URL
+    secret: https://audio-quiz-api-1014599277455.us-east1.run.app/generate-quiz
