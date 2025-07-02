@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import AudioWaveformContainer from "../components/AudioWaveformContainer";
 import { Volume2, VolumeX } from "lucide-react";
 import { Slider } from "../components/ui/slider";
 import Banner from "../components/ui/banner";
+import useScreenSize from "../hooks/useScreenSize";
 import type { Correspondent, QuestionData } from "@/types/question";
+import type { ScreenSize } from "@/types/screenSize";
 
 
 interface QuestionPageProps {
@@ -66,7 +68,7 @@ function QuestionPage(props: QuestionPageProps) {
         data.options.forEach(option => {
 
             optionStyles[option.id] = {
-                className: "w-full h-14",
+                className: "",
                 enabled: true
             }
         })
@@ -120,59 +122,77 @@ function QuestionPage(props: QuestionPageProps) {
     }
 
     return (
-        <div id="outer" className="flex flex-col w-full min-h-screen min-w-1/2 justify-center items-center">
-            <Banner size={"md"} />
-            <div id="mainContainer" className="flex flex-col min-w-5/6 shadow-xl">
-                <div id="headerBar" className="flex flex-row justify-between items-center px-6 py-4 rounded-t-lg bg-npr-blue-night">
+        <div id="outer" className="flex flex-col w-full h-screen sm:justify-center sm:items-center">
+            {/* <Banner /> */}
+            <div
+                id="mainContainer"
+                className="flex flex-col h-screen w-full sm:w-2/3 sm:h-2/3 shadow-xl sm:rounded-t-lg bg-npr-blue-dark">
+                {/* Header always at the top */}
+                <div
+                    id="headerBar"
+                    className="flex flex-row justify-between items-center px-6 py-4 sm:rounded-t-lg bg-npr-blue-night">
                     <QuestionTracker current={questionNumber} total={numberOfQuestions} />
                     <CurrentScoreTracker score={totalScore} />
                 </div>
-                <div id="bodyContainer" className="flex flex-row h-50 items-center p-6 justify-between bg-npr-blue-dark">
-                    <AudioContainer
-                        playAudio={playAudio}
-                        audioUrl={audioUrl}
-                        onAudioIsReady={setAudioIsReady} />
-                    <div className="flex min-w-1/4 justify-end ">
+
+                {/* Middle content grows to fill space between header and footer */}
+                <div className="flex flex-col flex-grow justify-center">
+
+                    <div className="flex flex-col flex-grow min-w-1/4 items-center justify-center">
+                        <h3 className="text-base text-5xl font-semibold text-npr-light">Possible Score</h3>
                         <PossibleScoreTracker
                             incorrectAnswersCount={incorrectAnswersCount}
                             onRoundCompleted={handleRoundCompleted}
-                            roundIsActive={roundIsActive} />
+                            roundIsActive={roundIsActive}
+                        />
                     </div>
-                </div>
-                {/* <div id="possibleScoreContainer" className="flex flex-row w-full justify-center pb-4">
-                    <PossibleScoreTracker
-                        onRoundComplete={handleRoundComplete}
-                        roundIsActive={roundIsActive} />
-                </div> */}
-                <div id="mcContainer" className="grid grid-cols-2 gap-6 p-6 bg-npr-blue-dark">
-                    {data.options.map((option) => {
-                        return (
+                    <div
+                        id="bodyContainer"
+                        className="flex flex-col">
+                        <AudioContainer
+                            playAudio={playAudio}
+                            audioUrl={audioUrl}
+                            onAudioIsReady={setAudioIsReady}
+                        />
+
+                    </div>
+                    {/* Options container just above footer */}
+                    {/* <div className="bg-green-300"> */}
+                    <div
+                        id="mcContainer"
+                        className="grid grid-cols-1 sm:grid sm:grid-cols-2 w-full gap-4 p-4">
+                        {data.options.map((option) => (
                             <Button
                                 variant="option"
                                 disabled={!roundIsActive || !optionProps[option.id].enabled}
                                 size={"lg"}
                                 onClick={() => handleAnswerClicked(option)}
                                 key={option.id}
-                                className={optionProps[option.id]?.className}>{option.full_name}</Button>
-                        )
-                    })}
+                                className={`w-full ${optionProps[option.id]?.className}`}>
+                                {option.full_name}
+                            </Button>
+                        ))}
+                    </div>
+                    {/* </div> */}
                 </div>
-                <div id="footerBar" className="flex flex-row w-full justify-center p-6 rounded-b-lg bg-npr-blue-night shadow-md">
+
+                <div
+                    id="footerBar"
+                    className="flex flex-row justify-center p-6 sm:rounded-b-lg bg-npr-blue-night shadow-md">
                     <Button
                         disabled={roundIsActive}
                         onClick={onContinueClicked}
                         id="continueBtn"
                         size="lg"
-                        variant={"navigation"}
-                    >Continue</Button>
-                    {/* <Button onClick={handleStartClicked} id="startBtn" className="bg-npr-red hover:bg-npr-blue text-white font-bold px-8 py-3 rounded-lg shadow transition-colors">Start</Button>
-                    <Button onClick={handleStopClicked} id="stopBtn" className="bg-npr-red hover:bg-npr-blue text-white font-bold px-8 py-3 rounded-lg shadow transition-colors">Stop</Button> */}
-                    {/* <Button onClick={() => setPossibleScore(500)} id="startBtn" className="bg-npr-red hover:bg-npr-blue text-white font-bold px-8 py-3 rounded-lg shadow transition-colors">Reset</Button> */}
+                        variant={"navigation"}>
+                        Continue
+                    </Button>
                     <audio ref={audioRef} />
                 </div>
             </div>
         </div>
     );
+
 }
 
 type QuestionTrackerProps = {
@@ -261,7 +281,6 @@ function PossibleScoreTracker({ roundIsActive, onRoundCompleted, incorrectAnswer
             }, DECREMENT_INTERVAL_MS);
         }
         if (prevRoundIsActive.current && !roundIsActive) {
-            // Round is no longer active because the correct answer was selected
             prevRoundIsActive.current = roundIsActive;
             cleanup();
             onRoundCompleted(possibleScore);
@@ -276,34 +295,45 @@ function PossibleScoreTracker({ roundIsActive, onRoundCompleted, incorrectAnswer
 }
 
 function AudioContainer({ playAudio, audioUrl, onAudioIsReady }: { playAudio: boolean, audioUrl: string | undefined, onAudioIsReady: (isLoaded: boolean) => void }) {
+    const screenSize: ScreenSize = useScreenSize();
     const DEFAULT_MUTED_VOLUME = 0;
     const DEFAULT_VOLUME: number = 0.33;
     const [volume, setVolume] = useState([DEFAULT_VOLUME]);
+    const [showVolume, setShowVolume] = useState(false);
+    const MIN_BROWSER_WIDTH = 700;
+    // useEffect(() => {
+    //     if (screenSize.width > MIN_BROWSER_WIDTH) {
+    //         setShowVolume(true);
+    //         console.log(screenSize)
+    //     }
+    // }, [screenSize])
 
     return (<>
-        <div id="volumeControl" className="flex flex-col gap-2 h-full items-center rounded-md bg-npr-blue-dark text-npr-light">
+        {/* <div id="volumeControl" className="flex flex-col gap-2 h-full items-center rounded-md bg-npr-blue-dark text-npr-light">
             <Slider
+                hidden={!showVolume}
                 onValueChange={setVolume}
                 value={volume}
                 defaultValue={[.33]}
                 min={0}
                 max={1}
                 step={.01} />
-            {volume && volume[0] > DEFAULT_MUTED_VOLUME
-                ? <Volume2 className="cursor-pointer h-10 w-10" onClick={() => setVolume([DEFAULT_MUTED_VOLUME])} />
-                : <VolumeX className="cursor-pointer h-10 w-10" onClick={() => setVolume([DEFAULT_VOLUME])} />}
-
-        </div>
-        {/* </div> */}
+            <div hidden={!showVolume}>
+                {volume && volume[0] > DEFAULT_MUTED_VOLUME
+                    ? <Volume2 className="cursor-pointer h-10 w-10" onClick={() => setVolume([DEFAULT_MUTED_VOLUME])} />
+                    : <VolumeX className="cursor-pointer h-10 w-10" onClick={() => setVolume([DEFAULT_VOLUME])} />}
+            </div>
+        </div> */}
         <AudioWaveformContainer
             playAudio={playAudio}
             onAudioIsReady={onAudioIsReady}
             url={audioUrl}
-            width={500}
-            height={125}
+            width={Math.min(screenSize.width * .9, 500)}
+            height={100}
             volume={volume[0]}
             className="rounded-lg bg-npr-light "
         />
+
         {/* <AudioGraph isActive={roundIsActive} /> */}
     </>)
 }

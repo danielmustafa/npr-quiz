@@ -1,29 +1,25 @@
-function Banner({size}: {size: "sm" | "md" | "lg"}) {
+function Banner() {
 
-    const variant = {
-        sm: {
-            h1: "text-3xl",
-            img: "h-8 md:h-10",
-        },
-        md: {
-            h1: "text-4xl",
-            img: "h-12 md:h-14",
-        },
-        lg: {
-            h1: "text-5xl",
-            img: "h-16 md:h-20",
-        }
-    }
-
-    return (<h1 className={`flex items-center font-bold text-center p-4 ${variant[size].h1}`} >
-        The <span className="text-npr-red font-[Caveat]">(unofficial)</span>
+    return (<h1 className={`flex flex-col font-medium text-4xl md:text-5xl lg:text-6xl items-center justify-center text-center sm:flex-row gap-3`}>
+        The
+        <span className={`text-npr-red font-[Caveat] font-bold`}>(unofficial)</span>
         <img
             src="/npr_logo.jpg"
             alt="NPR Logo"
-            className={`inline align-middle mx-2 ${variant[size].img}`}
-        />
+            className={`h-10 md:h-14 lg:h-20`} />
         Audio Quiz
     </h1>)
+
+    // return (<div className="flex flex-col items-center justify-center text-center sm:flex-row gap-3">
+    //     <h1 className={`${variant[size].h1}`}>The</h1>
+    //     <span className={`${variant[size].h1} text-npr-red font-[Caveat]`}>(unofficial)</span>
+    //     <img
+    //         src="/npr_logo.jpg"
+    //         alt="NPR Logo"
+    //         className={` ${variant[size].img}`} />
+    //     <h1 className={`${variant[size].h1}`}>Audio Quiz</h1>
+    // </div>)
+
 }
 
 export default Banner

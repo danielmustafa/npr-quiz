@@ -20,6 +20,7 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600,
     const dataArrayRef = useRef<Uint8Array | null>(null);
     const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
     const animationIdRef = useRef<number | null>(null);
+    const showVisual = true;
 
     function handleAudioIsLoading(isLoading: boolean) {
         // console.log('loading audio')
@@ -109,12 +110,12 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600,
 
     return (
         <div className={`flex flex-col items-center`}>
-            <canvas
+            {showVisual && <canvas
             className="bg-yellow-300"
                 ref={canvasRef}
                 width={width}
                 height={height}
-                 />
+                 />}
             <audio
                 crossOrigin="anonymous"
                 ref={audioRef}

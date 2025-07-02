@@ -28,8 +28,7 @@ function App() {
   useEffect(() => {
     if (data) {
       console.log('updating')
-      // setNumberOfQuestions(data.metadata.total_questions);
-      setNumberOfQuestions(2);
+      setNumberOfQuestions(data.metadata.total_questions);
     }
   }, [data])
 
