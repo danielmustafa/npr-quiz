@@ -40,6 +40,7 @@ function App() {
 
 
   function handleStartClicked(): void {
+    console.log('handleStartClicked')
     setGameState(GameState.IN_PROGRESS);
   }
 

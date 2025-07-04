@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import AudioWaveformContainer from "../components/AudioWaveformContainer";
-import { Volume2, VolumeX } from "lucide-react";
-import { Slider } from "../components/ui/slider";
-import Banner from "../components/ui/banner";
+// import { Volume2, VolumeX } from "lucide-react";
+// import { Slider } from "../components/ui/slider";
+// import Banner from "../components/ui/banner";
 import useScreenSize from "../hooks/useScreenSize";
 import type { Correspondent, QuestionData } from "@/types/question";
 import type { ScreenSize } from "@/types/screenSize";
+import { GameState } from "@/types/gameState";
+import { PossibleScoreTracker } from "@/components/PossibleScoreTracker";
 
 
 interface QuestionPageProps {
@@ -24,9 +26,11 @@ interface OptionProps {
 }
 
 function QuestionPage(props: QuestionPageProps) {
+    const screenSize: ScreenSize = useScreenSize();
+    const [roundState, setRoundState] = useState<GameState>(GameState.NOT_STARTED);
     const { questionNumber, numberOfQuestions, totalScore, onContinueClicked, data, onScoreUpdated } = props;
 
-    const [roundIsActive, setRoundIsActive] = useState(false);
+    // const [roundIsActive, setRoundIsActive] = useState(false);
     const [incorrectAnswersCount, setIncorrectAnswersCount] = useState<number>(0);
 
     const [audioUrl, setAudioUrl] = useState<string | undefined>(undefined);
@@ -35,8 +39,13 @@ function QuestionPage(props: QuestionPageProps) {
     const [optionProps, setOptionProps] = useState<Record<string, OptionProps>>({});
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
+    const isBrowserMobile = useMemo(() => {
+        return screenSize.width < 640; // Assuming mobile is less than 640px width
+    }, [screenSize.width])
+
     function endRound() {
-        setRoundIsActive(false);
+        setRoundState(GameState.FINISHED);
+        // setRoundIsActive(false);
         setPlayAudio(false);
         setAudioUrl(undefined);
     }
@@ -75,12 +84,13 @@ function QuestionPage(props: QuestionPageProps) {
 
         setOptionProps(optionStyles)
 
-        if (audioIsReady) {
-            setRoundIsActive(true);
+        //autoplay if browser is desktop
+        if (!isBrowserMobile && audioIsReady) {
+            // setRoundIsActive(true);
+            setRoundState(GameState.IN_PROGRESS);
             setPlayAudio(true);
         }
-    }, [data, audioIsReady]);
-
+    }, [data, audioIsReady, isBrowserMobile]);
 
     function playAnswerAudio(answer: 'CORRECT' | 'INCORRECT') {
         if (!audioRef.current) return;
@@ -115,10 +125,18 @@ function QuestionPage(props: QuestionPageProps) {
     }
 
     function handleRoundCompleted(possibleScore: number) {
-        if (roundIsActive) {
+        // if (roundIsActive) {
+        //     endRound();
+        // }
+        if (roundState === GameState.IN_PROGRESS) {
             endRound();
         }
         onScoreUpdated((prev) => possibleScore + prev);
+    }
+
+    function handlePlayAudioClicked(): void {
+        setRoundState(GameState.IN_PROGRESS);
+        setPlayAudio(true);
     }
 
     return (
@@ -143,7 +161,7 @@ function QuestionPage(props: QuestionPageProps) {
                         <PossibleScoreTracker
                             incorrectAnswersCount={incorrectAnswersCount}
                             onRoundCompleted={handleRoundCompleted}
-                            roundIsActive={roundIsActive}
+                            roundIsActive={roundState === GameState.IN_PROGRESS}
                         />
                     </div>
                     <div
@@ -164,12 +182,12 @@ function QuestionPage(props: QuestionPageProps) {
                         {data.options.map((option) => (
                             <Button
                                 variant="option"
-                                disabled={!roundIsActive || !optionProps[option.id].enabled}
+                                disabled={!(roundState === GameState.IN_PROGRESS) || !optionProps[option.id].enabled}
                                 size={"lg"}
                                 onClick={() => handleAnswerClicked(option)}
                                 key={option.id}
                                 className={`w-full ${optionProps[option.id]?.className}`}>
-                                {option.full_name}
+                                {isBrowserMobile && roundState === GameState.NOT_STARTED ? "-" : option.full_name}
                             </Button>
                         ))}
                     </div>
@@ -178,9 +196,17 @@ function QuestionPage(props: QuestionPageProps) {
 
                 <div
                     id="footerBar"
-                    className="flex flex-row justify-center p-6 sm:rounded-b-lg bg-npr-blue-night shadow-md">
+                    className="flex flex-row justify-center gap-4 p-6 sm:rounded-b-lg bg-npr-blue-night shadow-md">
+                    {isBrowserMobile && <Button
+                        disabled={roundState !== GameState.NOT_STARTED}
+                        onClick={handlePlayAudioClicked}
+                        id="continueBtn"
+                        size="lg"
+                        variant={"navigation"}>
+                        Play Audio
+                    </Button>}
                     <Button
-                        disabled={roundIsActive}
+                        disabled={roundState !== GameState.FINISHED}
                         onClick={onContinueClicked}
                         id="continueBtn"
                         size="lg"
@@ -217,90 +243,11 @@ function CurrentScoreTracker({ score }: { score: number }) {
     )
 }
 
-function PossibleScoreTracker({ roundIsActive, onRoundCompleted, incorrectAnswersCount }:
-    {
-        roundIsActive: boolean,
-        onRoundCompleted: (possibleScore: number) => void,
-        incorrectAnswersCount: number
-    }) {
-    const DEFAULT_MIN_SCORE = 0;
-    const DEFAULT_START_SCORE = 500;
-    const DECREMENT_INTERVAL_MS = 25;
-    const DEFAULT_TEXT_COLOR = "text-npr-light";
-    const intervalRef = useRef<NodeJS.Timeout | null>(null);
-    const incorrectAnswersCountRef = useRef<number>(incorrectAnswersCount);
-    const prevRoundIsActive = useRef<boolean>(roundIsActive);
-    const [possibleScore, setPossibleScore] = useState(DEFAULT_START_SCORE);
-    const [textColor, setTextColor] = useState(DEFAULT_TEXT_COLOR);
-    const colorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    useEffect(() => {
-        if (possibleScore === DEFAULT_MIN_SCORE) onRoundCompleted(possibleScore);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [possibleScore])
-
-    useEffect(() => {
-        if (incorrectAnswersCount > incorrectAnswersCountRef.current) {
-            incorrectAnswersCountRef.current = incorrectAnswersCount;
-            if (incorrectAnswersCount > 0) {
-                setTextColor("text-npr-red");
-                setPossibleScore((prev) => {
-                    const reduced = Math.round(prev - (prev * .10 * incorrectAnswersCount));
-                    return Math.max(DEFAULT_MIN_SCORE, reduced);
-                })
-            }
-
-            if (colorTimeoutRef.current) clearTimeout(colorTimeoutRef.current);
-            colorTimeoutRef.current = setTimeout(() => {
-                setTextColor(DEFAULT_TEXT_COLOR);
-            }, 125);
-
-        }
-        return () => {
-            if (colorTimeoutRef.current) clearTimeout(colorTimeoutRef.current);
-        }
-    }, [incorrectAnswersCount])
-
-    useEffect(() => {
-        function cleanup() {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-                intervalRef.current = null;
-            }
-        }
-        if (roundIsActive && possibleScore > DEFAULT_MIN_SCORE) {
-            prevRoundIsActive.current = roundIsActive;
-            intervalRef.current = setInterval(() => {
-                setPossibleScore((prev) => {
-                    if (prev > DEFAULT_MIN_SCORE) {
-                        return prev - 1;
-                    } else {
-                        return DEFAULT_MIN_SCORE;
-                    }
-                });
-            }, DECREMENT_INTERVAL_MS);
-        }
-        if (prevRoundIsActive.current && !roundIsActive) {
-            prevRoundIsActive.current = roundIsActive;
-            cleanup();
-            onRoundCompleted(possibleScore);
-        }
-        return () => { cleanup(); };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [roundIsActive]);
-
-
-    return (<p id="possibleScore" className={`text-9xl font-bold ${textColor}`}>{possibleScore}</p>
-    )
-}
-
 function AudioContainer({ playAudio, audioUrl, onAudioIsReady }: { playAudio: boolean, audioUrl: string | undefined, onAudioIsReady: (isLoaded: boolean) => void }) {
     const screenSize: ScreenSize = useScreenSize();
-    const DEFAULT_MUTED_VOLUME = 0;
-    const DEFAULT_VOLUME: number = 0.33;
-    const [volume, setVolume] = useState([DEFAULT_VOLUME]);
-    const [showVolume, setShowVolume] = useState(false);
-    const MIN_BROWSER_WIDTH = 700;
+    // const DEFAULT_MUTED_VOLUME = 0;
+    // const DEFAULT_VOLUME: number = 0.33;
+    // const [volume, setVolume] = useState([DEFAULT_VOLUME]);
     // useEffect(() => {
     //     if (screenSize.width > MIN_BROWSER_WIDTH) {
     //         setShowVolume(true);
@@ -330,7 +277,8 @@ function AudioContainer({ playAudio, audioUrl, onAudioIsReady }: { playAudio: bo
             url={audioUrl}
             width={Math.min(screenSize.width * .9, 500)}
             height={100}
-            volume={volume[0]}
+            // volume={volume[0]}
+            volume={0.33}
             className="rounded-lg bg-npr-light "
         />
 

@@ -91,9 +91,11 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600,
             animationIdRef.current = requestAnimationFrame(draw);
         };
 
-        if (audioRef.current){
+        if (audioRef.current) {
             if (playAudio && audioIsLoaded) {
-                audioRef.current.play();
+                audioRef.current.play().catch((error) => {
+                    console.error("Error playing audio:", error);
+                });
             } else {
                 audioRef.current.pause();
                 audioRef.current.currentTime = 0;
@@ -111,11 +113,11 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600,
     return (
         <div className={`flex flex-col items-center`}>
             {showVisual && <canvas
-            className="bg-yellow-300"
+                className="bg-yellow-300"
                 ref={canvasRef}
                 width={width}
                 height={height}
-                 />}
+            />}
             <audio
                 crossOrigin="anonymous"
                 ref={audioRef}
