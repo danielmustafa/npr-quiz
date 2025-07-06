@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-
-export function PossibleScoreTracker({ roundIsActive, onRoundCompleted, incorrectAnswersCount }:
+import { RoundCompletedReason } from '../types/roundCompletedReason';
+export function PossibleScoreTracker({ maxIncorrectAnswers, roundIsActive, onRoundCompleted, incorrectAnswersCount }:
     {
+        maxIncorrectAnswers: number,
         roundIsActive: boolean,
-        onRoundCompleted: (possibleScore: number) => void,
+        onRoundCompleted: (possibleScore: number, reason: RoundCompletedReason) => void,
         incorrectAnswersCount: number
     }) {
     const DEFAULT_MIN_SCORE = 0;
@@ -18,13 +19,18 @@ export function PossibleScoreTracker({ roundIsActive, onRoundCompleted, incorrec
     const colorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        if (possibleScore === DEFAULT_MIN_SCORE) onRoundCompleted(possibleScore);
+        if (possibleScore === DEFAULT_MIN_SCORE) onRoundCompleted(possibleScore, RoundCompletedReason.TIME_EXPIRED);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [possibleScore])
 
     useEffect(() => {
         if (incorrectAnswersCount > incorrectAnswersCountRef.current) {
             incorrectAnswersCountRef.current = incorrectAnswersCount;
+
+            if (incorrectAnswersCount === maxIncorrectAnswers) {
+                onRoundCompleted(possibleScore, RoundCompletedReason.MAX_INCORRECT_ANSWERS)
+            }
+
             if (incorrectAnswersCount > 0) {
                 setTextColor("text-npr-red");
                 setPossibleScore((prev) => {
@@ -42,7 +48,8 @@ export function PossibleScoreTracker({ roundIsActive, onRoundCompleted, incorrec
         return () => {
             if (colorTimeoutRef.current) clearTimeout(colorTimeoutRef.current);
         }
-    }, [incorrectAnswersCount])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [incorrectAnswersCount, maxIncorrectAnswers])
 
     useEffect(() => {
         function cleanup() {
@@ -66,7 +73,7 @@ export function PossibleScoreTracker({ roundIsActive, onRoundCompleted, incorrec
         if (prevRoundIsActive.current && !roundIsActive) {
             prevRoundIsActive.current = roundIsActive;
             cleanup();
-            onRoundCompleted(possibleScore);
+            onRoundCompleted(possibleScore, RoundCompletedReason.CORRECT_ANSWER);
         }
         return () => { cleanup(); };
         // eslint-disable-next-line react-hooks/exhaustive-deps
