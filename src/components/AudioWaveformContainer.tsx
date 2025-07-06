@@ -1,20 +1,19 @@
 import React, { useEffect, useRef } from "react";
 
 interface OscilloscopeProps {
-    url?: string;
+    audioRef: React.RefObject<HTMLAudioElement | null>;
     width?: number;
     height?: number;
     volume?: number;
     className?: string;
-    onAudioIsReady: (audioIsLoaded: boolean) => void;
-    playAudio: boolean;
+    // playAudio: boolean;
 }
 
-const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600, height = 120, onAudioIsReady: onAudioIsLoaded, playAudio = false, volume = .33 }) => {
+const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ audioRef, width = 600, height = 120 }) => {
     // const [audioIsLoading, setAudioIsLoading] = React.useState(false);
-    const [audioIsLoaded, setAudioIsLoaded] = React.useState(false);
+    // const [audioIsLoaded, setAudioIsLoaded] = React.useState(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    // const audioRef = useRef<HTMLAudioElement | null>(null);
     const audioCtxRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
     const dataArrayRef = useRef<Uint8Array | null>(null);
@@ -22,24 +21,24 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600,
     const animationIdRef = useRef<number | null>(null);
     const showVisual = true;
 
-    function handleAudioIsLoading(isLoading: boolean) {
-        // console.log('loading audio')
-        // setAudioIsLoading(isLoading);
-        onAudioIsLoaded(!isLoading);
-    }
+    // function handleAudioIsLoading(isLoading: boolean) {
+    //     console.log(`loading audio: ${isLoading}`)
+    //     // setAudioIsLoading(isLoading);
+    //     onAudioIsLoaded(!isLoading);
+    // }
 
-    function handleAudioIsLoaded(isLoaded: boolean) {
-        // console.log('loaded audio')
-        handleAudioIsLoading(!isLoaded);
-        setAudioIsLoaded(isLoaded);
-        onAudioIsLoaded(isLoaded);
-    }
+    // function handleAudioIsLoaded(isLoaded: boolean) {
+    //     console.log(`loading audio: ${isLoaded}`)
+    //     handleAudioIsLoading(!isLoaded);
+    //     setAudioIsLoaded(isLoaded);
+    //     onAudioIsLoaded(isLoaded);
+    // }
 
-    useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.volume = volume;
-        }
-    }, [volume]);
+    // useEffect(() => {
+    //     if (audioRef.current) {
+    //         audioRef.current.volume = volume;
+    //     }
+    // }, [volume, audioRef]);
 
     useEffect(() => {
         if (!audioRef.current) return;
@@ -91,41 +90,37 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ url, width = 600,
             animationIdRef.current = requestAnimationFrame(draw);
         };
 
-        if (audioRef.current) {
-            if (playAudio && audioIsLoaded) {
-                audioRef.current.play().catch((error) => {
-                    console.error("Error playing audio:", error);
-                });
-            } else {
-                audioRef.current.pause();
-                audioRef.current.currentTime = 0;
-            }
-        }
+        // if (audioRef.current) {
+        //     if (playAudio && audioIsLoaded) {
+        //         audioRef.current.play().catch((error) => {
+        //             console.error("Error playing audio:", error);
+        //         });
+        //     }
+        // }
 
         draw();
         return () => {
             if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current);
             if (audioCtxRef.current) audioCtxRef.current.close();
         };
-    }, [url, playAudio, audioIsLoaded]);
+    }, [audioRef]);
 
 
     return (
         <div className={`flex flex-col items-center`}>
             {showVisual && <canvas
-                className="bg-yellow-300"
                 ref={canvasRef}
                 width={width}
                 height={height}
             />}
-            <audio
+            {/* <audio
                 crossOrigin="anonymous"
                 ref={audioRef}
                 src={url}
                 className="hidden"
                 onLoadStart={() => handleAudioIsLoading(true)}
                 onLoadedData={() => handleAudioIsLoaded(true)}
-                onError={() => handleAudioIsLoading(false)} />
+                onError={() => handleAudioIsLoading(false)} /> */}
         </div>
     );
 };

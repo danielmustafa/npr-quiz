@@ -9,6 +9,7 @@ import type { Correspondent, QuestionData } from "@/types/question";
 import type { ScreenSize } from "@/types/screenSize";
 import { GameState } from "@/types/gameState";
 import { PossibleScoreTracker } from "@/components/PossibleScoreTracker";
+import { RoundCompletedReason } from "@/types/roundCompletedReason";
 
 
 interface QuestionPageProps {
@@ -21,24 +22,24 @@ interface QuestionPageProps {
 }
 
 interface OptionProps {
+    labelValue: string;
     className: string;
     enabled: boolean;
 }
 
 function QuestionPage(props: QuestionPageProps) {
     const screenSize: ScreenSize = useScreenSize();
+    const quizAudioRef = useRef<HTMLAudioElement | null>(null);
+    const soundFxAudioRef = useRef<HTMLAudioElement | null>(null);
     const [roundState, setRoundState] = useState<GameState>(GameState.NOT_STARTED);
     const { questionNumber, numberOfQuestions, totalScore, onContinueClicked, data, onScoreUpdated } = props;
-
-    // const [roundIsActive, setRoundIsActive] = useState(false);
     const [incorrectAnswersCount, setIncorrectAnswersCount] = useState<number>(0);
-
     const [audioUrl, setAudioUrl] = useState<string | undefined>(undefined);
     const [audioIsReady, setAudioIsReady] = useState(false);
-    const [playAudio, setPlayAudio] = useState(false);
     const [optionProps, setOptionProps] = useState<Record<string, OptionProps>>({});
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [selectedAnswerLabel, setSelectedAnswerLabel] = useState<string>(" ")
 
+    console.log('render')
     const isBrowserMobile = useMemo(() => {
         return screenSize.width < 640; // Assuming mobile is less than 640px width
     }, [screenSize.width])
@@ -46,58 +47,57 @@ function QuestionPage(props: QuestionPageProps) {
     function endRound() {
         setRoundState(GameState.FINISHED);
         // setRoundIsActive(false);
-        setPlayAudio(false);
-        setAudioUrl(undefined);
+        // setPlayAudio(false);
+        stopAudio();
+        // setAudioUrl(undefined);
     }
 
-    // function handleStartClicked(): void {
-    //     // if (onStartClicked) {
-    //     //     onStartClicked();
-    //     // }
+    function playAudio(): void {
+        console.log('playAudio')
+        // console.log('playAudio')
+        quizAudioRef.current?.play().catch((error) => {
+            console.error("Error playing audio:", error);
+        });
+    }
 
-    //     if (!roundIsActive) {
-    //         setRoundIsActive(true);
-    //         setPlayAudio(true);
-    //         setAudioUrl(data.audio_url);
-    //     }
-    // }
-
-    // function handleStopClicked(): void {
-    //     setRoundIsActive(false);
-    //     setPlayAudio(false);
-    //     setAudioUrl(undefined);
-    // }
+    function stopAudio(): void {
+        quizAudioRef.current?.pause();
+        quizAudioRef.current!.currentTime = 0; // Reset audio to the beginning
+    }
 
     useEffect(() => {
         if (!data) return;
 
         setAudioUrl(data.audio_url);
 
-        const optionStyles: Record<string, OptionProps> = {}
+        const optionProps: Record<string, OptionProps> = {}
         data.options.forEach(option => {
 
-            optionStyles[option.id] = {
+            optionProps[option.id] = {
+                labelValue: option.full_name,
                 className: "",
                 enabled: true
             }
         })
 
-        setOptionProps(optionStyles)
-
+        setOptionProps(optionProps)
+        console.log(`audio is ready: ${audioIsReady}`)
         //autoplay if browser is desktop
         if (!isBrowserMobile && audioIsReady) {
             // setRoundIsActive(true);
+            console.log('ready')
             setRoundState(GameState.IN_PROGRESS);
-            setPlayAudio(true);
+            playAudio();
+            // setPlayAudio(true);
         }
     }, [data, audioIsReady, isBrowserMobile]);
 
     function playAnswerAudio(answer: 'CORRECT' | 'INCORRECT') {
-        if (!audioRef.current) return;
+        if (!soundFxAudioRef.current) return;
 
         const audioFile = answer === 'CORRECT' ? '/public/correct_choice.mp3' : '/public/incorrect_choice.mp3';
-        audioRef.current.src = audioFile;
-        audioRef.current.play().catch((error) => {
+        soundFxAudioRef.current.src = audioFile;
+        soundFxAudioRef.current.play().catch((error) => {
             console.error("Error playing audio:", error);
         });
 
@@ -105,17 +105,28 @@ function QuestionPage(props: QuestionPageProps) {
 
     function handleAnswerClicked(option: Correspondent): void {
         const { is_answer, id } = option;
-        console.log(typeof is_answer)
         if (is_answer) {
             endRound();
+            setSelectedAnswerLabel('Correct!');
             playAnswerAudio('CORRECT');
-        } else {
-            playAnswerAudio('INCORRECT');
-            setIncorrectAnswersCount((prev) => prev + 1);
             setOptionProps((prev) => {
                 return {
                     ...prev,
                     [id]: {
+                        ...prev[id],
+                        labelValue: `✅ ${prev[id].labelValue}`
+                    }
+                }
+            })
+        } else {
+            playAnswerAudio('INCORRECT');
+            setSelectedAnswerLabel('Incorrect!');
+            setIncorrectAnswersCount((prev) => ++prev);
+            setOptionProps((prev) => {
+                return {
+                    ...prev,
+                    [id]: {
+                        labelValue: `❌ ${prev[id].labelValue}`,
                         className: prev[id].className.concat(" animate-wobble bg-npr-red"),
                         enabled: false
                     }
@@ -124,19 +135,39 @@ function QuestionPage(props: QuestionPageProps) {
         }
     }
 
-    function handleRoundCompleted(possibleScore: number) {
-        // if (roundIsActive) {
-        //     endRound();
-        // }
+    function handleRoundCompleted(possibleScore: number, completedReason: RoundCompletedReason) {
         if (roundState === GameState.IN_PROGRESS) {
             endRound();
         }
-        onScoreUpdated((prev) => possibleScore + prev);
+
+        if (completedReason === RoundCompletedReason.CORRECT_ANSWER) {
+            onScoreUpdated((prev) => possibleScore + prev);
+        }
+
+        if (completedReason === RoundCompletedReason.TIME_EXPIRED) {
+            setSelectedAnswerLabel(`Time's up!`)
+        } else if (completedReason === RoundCompletedReason.MAX_INCORRECT_ANSWERS) {
+            setSelectedAnswerLabel('Oops :(')
+        }
     }
 
     function handlePlayAudioClicked(): void {
         setRoundState(GameState.IN_PROGRESS);
-        setPlayAudio(true);
+        playAudio();
+        // setPlayAudio(true);
+    }
+
+    function handleAudioIsLoading(isLoading: boolean) {
+        console.log(`loading audio: ${isLoading}`)
+        // setAudioIsLoading(isLoading);
+        setAudioIsReady(!isLoading);
+    }
+
+    function handleAudioIsLoaded(isLoaded: boolean) {
+        console.log(`loading audio: ${isLoaded}`)
+        handleAudioIsLoading(!isLoaded);
+        // setAudioIsLoaded(isLoaded);
+        setAudioIsReady(isLoaded);
     }
 
     return (
@@ -157,8 +188,9 @@ function QuestionPage(props: QuestionPageProps) {
                 <div className="flex flex-col flex-grow justify-center">
 
                     <div className="flex flex-col flex-grow min-w-1/4 items-center justify-center">
-                        <h3 className="text-base text-5xl font-semibold text-npr-light">Possible Score</h3>
+                        <h3 className="text-base text-5xl font-semibold text-npr-light pt-2">Possible Score</h3>
                         <PossibleScoreTracker
+                            maxIncorrectAnswers={3}
                             incorrectAnswersCount={incorrectAnswersCount}
                             onRoundCompleted={handleRoundCompleted}
                             roundIsActive={roundState === GameState.IN_PROGRESS}
@@ -168,14 +200,12 @@ function QuestionPage(props: QuestionPageProps) {
                         id="bodyContainer"
                         className="flex flex-col">
                         <AudioContainer
-                            playAudio={playAudio}
-                            audioUrl={audioUrl}
-                            onAudioIsReady={setAudioIsReady}
+                            // playAudio={playAudio}
+                            audioRef={quizAudioRef}
                         />
 
                     </div>
-                    {/* Options container just above footer */}
-                    {/* <div className="bg-green-300"> */}
+                    <SelectedAnswerLabel value={selectedAnswerLabel} />
                     <div
                         id="mcContainer"
                         className="grid grid-cols-1 sm:grid sm:grid-cols-2 w-full gap-4 p-4">
@@ -187,7 +217,7 @@ function QuestionPage(props: QuestionPageProps) {
                                 onClick={() => handleAnswerClicked(option)}
                                 key={option.id}
                                 className={`w-full ${optionProps[option.id]?.className}`}>
-                                {isBrowserMobile && roundState === GameState.NOT_STARTED ? "-" : option.full_name}
+                                {isBrowserMobile && roundState === GameState.NOT_STARTED ? "-" : optionProps[option.id]?.labelValue}
                             </Button>
                         ))}
                     </div>
@@ -213,9 +243,17 @@ function QuestionPage(props: QuestionPageProps) {
                         variant={"navigation"}>
                         Continue
                     </Button>
-                    <audio ref={audioRef} />
+                    <audio ref={quizAudioRef} />
                 </div>
             </div>
+            <audio
+                crossOrigin="anonymous"
+                ref={quizAudioRef}
+                src={audioUrl}
+                className="hidden"
+                onLoadStart={() => handleAudioIsLoading(true)}
+                onLoadedData={() => handleAudioIsLoaded(true)}
+                onError={() => handleAudioIsLoading(false)} />
         </div>
     );
 
@@ -243,8 +281,17 @@ function CurrentScoreTracker({ score }: { score: number }) {
     )
 }
 
-function AudioContainer({ playAudio, audioUrl, onAudioIsReady }: { playAudio: boolean, audioUrl: string | undefined, onAudioIsReady: (isLoaded: boolean) => void }) {
+function SelectedAnswerLabel({ value }: { value: string }) {
+    return (
+        <div className="flex w-full justify-center items-center">
+            <p className="min-h-[2rem] text-2xl font-semibold text-npr-light">{value}</p>
+        </div>
+    )
+}
+
+function AudioContainer({ audioRef }: { audioRef: React.RefObject<HTMLAudioElement | null> }) {
     const screenSize: ScreenSize = useScreenSize();
+    // const [audioIsLoaded, setAudioIsLoaded] = useState(false);
     // const DEFAULT_MUTED_VOLUME = 0;
     // const DEFAULT_VOLUME: number = 0.33;
     // const [volume, setVolume] = useState([DEFAULT_VOLUME]);
@@ -254,6 +301,19 @@ function AudioContainer({ playAudio, audioUrl, onAudioIsReady }: { playAudio: bo
     //         console.log(screenSize)
     //     }
     // }, [screenSize])
+
+    // function handleAudioIsLoading(isLoading: boolean) {
+    //     console.log(`loading audio: ${isLoading}`)
+    //     // setAudioIsLoading(isLoading);
+    //     onAudioIsReady(!isLoading);
+    // }
+
+    // function handleAudioIsLoaded(isLoaded: boolean) {
+    //     console.log(`loading audio: ${isLoaded}`)
+    //     handleAudioIsLoading(!isLoaded);
+    //     // setAudioIsLoaded(isLoaded);
+    //     onAudioIsReady(isLoaded);
+    // }
 
     return (<>
         {/* <div id="volumeControl" className="flex flex-col gap-2 h-full items-center rounded-md bg-npr-blue-dark text-npr-light">
@@ -272,17 +332,24 @@ function AudioContainer({ playAudio, audioUrl, onAudioIsReady }: { playAudio: bo
             </div>
         </div> */}
         <AudioWaveformContainer
-            playAudio={playAudio}
-            onAudioIsReady={onAudioIsReady}
-            url={audioUrl}
+            audioRef={audioRef}
+            // playAudio={playAudio}
+            // onAudioIsReady={onAudioIsReady}
+            // url={audioUrl}
             width={Math.min(screenSize.width * .9, 500)}
             height={100}
             // volume={volume[0]}
             volume={0.33}
-            className="rounded-lg bg-npr-light "
+            className="rounded-lg bg-npr-light"
         />
-
-        {/* <AudioGraph isActive={roundIsActive} /> */}
+        {/* <audio
+            crossOrigin="anonymous"
+            ref={audioRef}
+            src={audioUrl}
+            className="hidden"
+            onLoadStart={() => handleAudioIsLoading(true)}
+            onLoadedData={() => handleAudioIsLoaded(true)}
+            onError={() => handleAudioIsLoading(false)} /> */}
     </>)
 }
 
