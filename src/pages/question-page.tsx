@@ -187,8 +187,8 @@ function QuestionPage(props: QuestionPageProps) {
                 {/* Middle content grows to fill space between header and footer */}
                 <div className="flex flex-col flex-grow justify-center">
 
-                    <div className="flex flex-col flex-grow min-w-1/4 items-center justify-center">
-                        <h3 className="text-base text-5xl font-semibold text-npr-light pt-2">Possible Score</h3>
+                    <div className="flex flex-col h-1/3 sm:h-2/3  min-w-1/4 items-center justify-center">
+                        <h3 className="text-base text-5xl font-semibold text-npr-light">Possible Score</h3>
                         <PossibleScoreTracker
                             maxIncorrectAnswers={3}
                             incorrectAnswersCount={incorrectAnswersCount}
@@ -334,7 +334,7 @@ function AudioContainer({ audioRef }: { audioRef: React.RefObject<HTMLAudioEleme
         <AudioWaveformContainer
             audioRef={audioRef}
             width={Math.min(screenSize.width * .9, 500)}
-            height={100}
+            height={50}
             // volume={volume[0]}
             volume={0.33}
             className="rounded-lg bg-npr-light"
