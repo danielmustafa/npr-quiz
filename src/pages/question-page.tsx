@@ -333,23 +333,12 @@ function AudioContainer({ audioRef }: { audioRef: React.RefObject<HTMLAudioEleme
         </div> */}
         <AudioWaveformContainer
             audioRef={audioRef}
-            // playAudio={playAudio}
-            // onAudioIsReady={onAudioIsReady}
-            // url={audioUrl}
             width={Math.min(screenSize.width * .9, 500)}
             height={100}
             // volume={volume[0]}
             volume={0.33}
             className="rounded-lg bg-npr-light"
         />
-        {/* <audio
-            crossOrigin="anonymous"
-            ref={audioRef}
-            src={audioUrl}
-            className="hidden"
-            onLoadStart={() => handleAudioIsLoading(true)}
-            onLoadedData={() => handleAudioIsLoaded(true)}
-            onError={() => handleAudioIsLoading(false)} /> */}
     </>)
 }
 

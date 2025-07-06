@@ -92,21 +92,10 @@ function App() {
         case GameState.FINISHED:
           return <ResultsPage totalScore={totalScore} onStartOverClicked={handleStartOverClicked} />
       }
-      // console.log(data)
-      // //game is ready to launch
-      // if (gameState === GameState.IN_PROGRESS) {
-      //   return questionPages && questionPages[questionNumber];
-      // } else {
-      //   return <LandingPage onStartClicked={handleStartClicked} />;
-      // }
     }
   }
 
     return (getActivePage())
-  // return questionPages[0]
-  // return gameIsActive ? (questionPages[questionNumber]) : (
-  //   <LandingPage onStartClicked={handleStartClicked} />
-  // )
 
 }
 
