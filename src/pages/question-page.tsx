@@ -10,6 +10,8 @@ import type { ScreenSize } from "@/types/screenSize";
 import { GameState } from "@/types/gameState";
 import { PossibleScoreTracker } from "@/components/PossibleScoreTracker";
 import { RoundCompletedReason } from "@/types/roundCompletedReason";
+import type { RoundResults } from "@/types/roundResults";
+
 
 
 interface QuestionPageProps {
@@ -18,7 +20,8 @@ interface QuestionPageProps {
     numberOfQuestions: number;
     totalScore: number;
     onContinueClicked: () => void;
-    onScoreUpdated: (updater: (prev: number) => number) => void;
+    onRoundCompleted: (results: RoundResults) => void;
+    onAnswerClicked: (isCorrect: boolean) => void;
 }
 
 interface OptionProps {
@@ -27,34 +30,47 @@ interface OptionProps {
     enabled: boolean;
 }
 
+
+
 function QuestionPage(props: QuestionPageProps) {
     const screenSize: ScreenSize = useScreenSize();
     const quizAudioRef = useRef<HTMLAudioElement | null>(null);
     const soundFxAudioRef = useRef<HTMLAudioElement | null>(null);
     const [roundState, setRoundState] = useState<GameState>(GameState.NOT_STARTED);
-    const { questionNumber, numberOfQuestions, totalScore, onContinueClicked, data, onScoreUpdated } = props;
+    const { questionNumber, numberOfQuestions, totalScore, onContinueClicked, data, onAnswerClicked } = props;
     const [incorrectAnswersCount, setIncorrectAnswersCount] = useState<number>(0);
     const [audioUrl, setAudioUrl] = useState<string | undefined>(undefined);
     const [audioIsReady, setAudioIsReady] = useState(false);
     const [optionProps, setOptionProps] = useState<Record<string, OptionProps>>({});
     const [selectedAnswerLabel, setSelectedAnswerLabel] = useState<string>(" ")
+    const [roundStartMs, setRoundStartMs] = useState<number>(0);
+    // const [numberAttempts, setNumberAttempts] = useState<number>(0);
+    // const [numberCorrectAttempts, setNumberCorrectAttempts] = useState<number>(0);
+    // const [numberIncorrectAttempts, setNumberIncorrectAttempts] = useState<number>(0);
+    // const [roundScore, setRoundScore] = useState<number>(0);
 
-    console.log('render')
+
+
     const isBrowserMobile = useMemo(() => {
         return screenSize.width < 640; // Assuming mobile is less than 640px width
     }, [screenSize.width])
 
+    const roundIsActive = () => roundState === GameState.IN_PROGRESS
+
+    function startRoundTimer() {
+        setRoundStartMs(Date.now());
+    }
+
+    function getDuration(start: number, end: number) {
+        return (end - start) / 1000;
+    }
+
     function endRound() {
         setRoundState(GameState.FINISHED);
-        // setRoundIsActive(false);
-        // setPlayAudio(false);
         stopAudio();
-        // setAudioUrl(undefined);
     }
 
     function playAudio(): void {
-        console.log('playAudio')
-        // console.log('playAudio')
         quizAudioRef.current?.play().catch((error) => {
             console.error("Error playing audio:", error);
         });
@@ -69,7 +85,6 @@ function QuestionPage(props: QuestionPageProps) {
         if (!data) return;
 
         setAudioUrl(data.audio_url);
-
         const optionProps: Record<string, OptionProps> = {}
         data.options.forEach(option => {
 
@@ -84,11 +99,9 @@ function QuestionPage(props: QuestionPageProps) {
         console.log(`audio is ready: ${audioIsReady}`)
         //autoplay if browser is desktop
         if (!isBrowserMobile && audioIsReady) {
-            // setRoundIsActive(true);
-            console.log('ready')
             setRoundState(GameState.IN_PROGRESS);
             playAudio();
-            // setPlayAudio(true);
+            startRoundTimer();
         }
     }, [data, audioIsReady, isBrowserMobile]);
 
@@ -105,8 +118,10 @@ function QuestionPage(props: QuestionPageProps) {
 
     function handleAnswerClicked(option: Correspondent): void {
         const { is_answer, id } = option;
+        // setNumberAttempts(prev => ++prev)
         if (is_answer) {
-            endRound();
+            onAnswerClicked(true);
+            // setNumberCorrectAttempts(1);
             setSelectedAnswerLabel('Correct!');
             playAnswerAudio('CORRECT');
             setOptionProps((prev) => {
@@ -118,7 +133,10 @@ function QuestionPage(props: QuestionPageProps) {
                     }
                 }
             })
+            endRound();
         } else {
+            onAnswerClicked(false);
+            // setNumberIncorrectAttempts(prev => ++prev);
             playAnswerAudio('INCORRECT');
             setSelectedAnswerLabel('Incorrect!');
             setIncorrectAnswersCount((prev) => ++prev);
@@ -136,12 +154,13 @@ function QuestionPage(props: QuestionPageProps) {
     }
 
     function handleRoundCompleted(possibleScore: number, completedReason: RoundCompletedReason) {
-        if (roundState === GameState.IN_PROGRESS) {
-            endRound();
-        }
 
+        console.log(`handleRoundCompleted: ${possibleScore}, reason: ${completedReason}`);
+        let adjustedScore = 0;
         if (completedReason === RoundCompletedReason.CORRECT_ANSWER) {
-            onScoreUpdated((prev) => possibleScore + prev);
+            // onScoreUpdated((prev) => possibleScore + prev);
+            // setRoundScore(possibleScore);
+            adjustedScore = possibleScore;
         }
 
         if (completedReason === RoundCompletedReason.TIME_EXPIRED) {
@@ -149,24 +168,35 @@ function QuestionPage(props: QuestionPageProps) {
         } else if (completedReason === RoundCompletedReason.MAX_INCORRECT_ANSWERS) {
             setSelectedAnswerLabel('Oops :(')
         }
+
+        if (roundIsActive()) {
+            endRound();
+        }
+
+        const roundEndMs = Date.now()
+        const duration = getDuration(roundStartMs, roundEndMs);
+        const roundResults: RoundResults = {
+            score: adjustedScore,
+            duration: duration
+        }
+        console.log(roundResults)
+        props.onRoundCompleted(roundResults);
     }
 
     function handlePlayAudioClicked(): void {
         setRoundState(GameState.IN_PROGRESS);
         playAudio();
-        // setPlayAudio(true);
+        startRoundTimer();
     }
 
     function handleAudioIsLoading(isLoading: boolean) {
-        console.log(`loading audio: ${isLoading}`)
-        // setAudioIsLoading(isLoading);
+        // console.log(`loading audio: ${isLoading}`)
         setAudioIsReady(!isLoading);
     }
 
     function handleAudioIsLoaded(isLoaded: boolean) {
-        console.log(`loading audio: ${isLoaded}`)
+        // console.log(`loading audio: ${isLoaded}`)
         handleAudioIsLoading(!isLoaded);
-        // setAudioIsLoaded(isLoaded);
         setAudioIsReady(isLoaded);
     }
 
@@ -193,7 +223,7 @@ function QuestionPage(props: QuestionPageProps) {
                             maxIncorrectAnswers={3}
                             incorrectAnswersCount={incorrectAnswersCount}
                             onRoundCompleted={handleRoundCompleted}
-                            roundIsActive={roundState === GameState.IN_PROGRESS}
+                            roundIsActive={roundIsActive()}
                         />
                     </div>
                     <div
@@ -202,6 +232,7 @@ function QuestionPage(props: QuestionPageProps) {
                         <AudioContainer
                             // playAudio={playAudio}
                             audioRef={quizAudioRef}
+                            hidden={!roundIsActive()}
                         />
 
                     </div>
@@ -212,7 +243,7 @@ function QuestionPage(props: QuestionPageProps) {
                         {data.options.map((option) => (
                             <Button
                                 variant="option"
-                                disabled={!(roundState === GameState.IN_PROGRESS) || !optionProps[option.id].enabled}
+                                disabled={!(roundIsActive()) || !optionProps[option.id].enabled}
                                 size={"lg"}
                                 onClick={() => handleAnswerClicked(option)}
                                 key={option.id}
@@ -289,7 +320,7 @@ function SelectedAnswerLabel({ value }: { value: string }) {
     )
 }
 
-function AudioContainer({ audioRef }: { audioRef: React.RefObject<HTMLAudioElement | null> }) {
+function AudioContainer({ hidden, audioRef }: { hidden: boolean, audioRef: React.RefObject<HTMLAudioElement | null> }) {
     const screenSize: ScreenSize = useScreenSize();
     // const [audioIsLoaded, setAudioIsLoaded] = useState(false);
     // const DEFAULT_MUTED_VOLUME = 0;
@@ -332,6 +363,7 @@ function AudioContainer({ audioRef }: { audioRef: React.RefObject<HTMLAudioEleme
             </div>
         </div> */}
         <AudioWaveformContainer
+            hidden={hidden}
             audioRef={audioRef}
             width={Math.min(screenSize.width * .9, 500)}
             height={50}

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 
 interface OscilloscopeProps {
+    hidden: boolean;
     audioRef: React.RefObject<HTMLAudioElement | null>;
     width?: number;
     height?: number;
@@ -9,7 +10,7 @@ interface OscilloscopeProps {
     // playAudio: boolean;
 }
 
-const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ audioRef, width = 600, height = 120 }) => {
+const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({hidden = false, audioRef, width = 600, height = 120 }) => {
     // const [audioIsLoading, setAudioIsLoading] = React.useState(false);
     // const [audioIsLoaded, setAudioIsLoaded] = React.useState(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -107,11 +108,12 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({ audioRef, width =
 
 
     return (
-        <div className={`flex flex-col items-center`}>
+        <div className={`flex flex-col items-center min-h-[2rem]`}>
             {showVisual && <canvas
                 ref={canvasRef}
                 width={width}
                 height={height}
+                hidden={hidden}
             />}
             {/* <audio
                 crossOrigin="anonymous"

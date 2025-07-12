@@ -1,5 +1,6 @@
 function Banner() {
 
+
     return (<h1 className={`flex flex-col font-medium text-4xl md:text-5xl lg:text-6xl items-center justify-center text-center sm:flex-row gap-3`}>
         The
         <span className={`text-npr-red font-[Caveat] font-bold`}>(unofficial)</span>

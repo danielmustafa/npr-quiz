@@ -9,7 +9,7 @@ export function PossibleScoreTracker({ maxIncorrectAnswers, roundIsActive, onRou
     }) {
     const DEFAULT_MIN_SCORE = 0;
     const DEFAULT_START_SCORE = 500;
-    const DECREMENT_INTERVAL_MS = 25;
+    const DECREMENT_INTERVAL_MS = 20;
     const DEFAULT_TEXT_COLOR = "text-npr-light";
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
     const incorrectAnswersCountRef = useRef<number>(incorrectAnswersCount);
@@ -18,17 +18,21 @@ export function PossibleScoreTracker({ maxIncorrectAnswers, roundIsActive, onRou
     const [textColor, setTextColor] = useState(DEFAULT_TEXT_COLOR);
     const colorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    //Handler for score hitting 0
     useEffect(() => {
-        if (possibleScore === DEFAULT_MIN_SCORE) onRoundCompleted(possibleScore, RoundCompletedReason.TIME_EXPIRED);
+        if (possibleScore === DEFAULT_MIN_SCORE && incorrectAnswersCountRef.current < maxIncorrectAnswers) onRoundCompleted(possibleScore, RoundCompletedReason.TIME_EXPIRED);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [possibleScore])
 
+    //Handler for round being active
     useEffect(() => {
         if (incorrectAnswersCount > incorrectAnswersCountRef.current) {
             incorrectAnswersCountRef.current = incorrectAnswersCount;
 
             if (incorrectAnswersCount === maxIncorrectAnswers) {
-                onRoundCompleted(possibleScore, RoundCompletedReason.MAX_INCORRECT_ANSWERS)
+                setPossibleScore(0)
+                onRoundCompleted(DEFAULT_MIN_SCORE, RoundCompletedReason.MAX_INCORRECT_ANSWERS);
+                return;
             }
 
             if (incorrectAnswersCount > 0) {
@@ -70,9 +74,8 @@ export function PossibleScoreTracker({ maxIncorrectAnswers, roundIsActive, onRou
                 });
             }, DECREMENT_INTERVAL_MS);
         }
-        if (prevRoundIsActive.current && !roundIsActive) {
+        if (prevRoundIsActive.current && !roundIsActive && possibleScore > DEFAULT_MIN_SCORE) {
             prevRoundIsActive.current = roundIsActive;
-            cleanup();
             onRoundCompleted(possibleScore, RoundCompletedReason.CORRECT_ANSWER);
         }
         return () => { cleanup(); };
