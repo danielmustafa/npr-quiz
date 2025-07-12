@@ -12,6 +12,7 @@ import { GameState } from "@/types/gameState";
 import { PossibleScoreTracker } from "@/components/PossibleScoreTracker";
 import { RoundCompletedReason } from "@/types/roundCompletedReason";
 import type { RoundResults } from "@/types/roundResults";
+import Banner from "@/components/ui/banner";
 
 
 
@@ -196,8 +197,8 @@ function QuestionPage(props: QuestionPageProps) {
     }
 
     return (
-        <div id="outer" className="flex flex-col w-full h-screen sm:justify-center sm:items-center">
-            {/* <Banner /> */}
+        <div id="outer" className="flex flex-col w-full h-screen sm:justify-center sm:items-center sm:gap-4">
+            {!isBrowserMobile && <Banner size="sm" />}
             <div
                 id="mainContainer"
                 className="flex flex-col h-screen w-full sm:w-2/3 sm:h-2/3 shadow-xl sm:rounded-t-lg bg-npr-blue-dark">
