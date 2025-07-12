@@ -4,6 +4,7 @@ import AudioWaveformContainer from "../components/AudioWaveformContainer";
 // import { Volume2, VolumeX } from "lucide-react";
 // import { Slider } from "../components/ui/slider";
 // import Banner from "../components/ui/banner";
+import { Play } from 'lucide-react';
 import useScreenSize from "../hooks/useScreenSize";
 import type { Correspondent, QuestionData } from "@/types/question";
 import type { ScreenSize } from "@/types/screenSize";
@@ -44,12 +45,6 @@ function QuestionPage(props: QuestionPageProps) {
     const [optionProps, setOptionProps] = useState<Record<string, OptionProps>>({});
     const [selectedAnswerLabel, setSelectedAnswerLabel] = useState<string>(" ")
     const [roundStartMs, setRoundStartMs] = useState<number>(0);
-    // const [numberAttempts, setNumberAttempts] = useState<number>(0);
-    // const [numberCorrectAttempts, setNumberCorrectAttempts] = useState<number>(0);
-    // const [numberIncorrectAttempts, setNumberIncorrectAttempts] = useState<number>(0);
-    // const [roundScore, setRoundScore] = useState<number>(0);
-
-
 
     const isBrowserMobile = useMemo(() => {
         return screenSize.width < 640; // Assuming mobile is less than 640px width
@@ -113,43 +108,47 @@ function QuestionPage(props: QuestionPageProps) {
         soundFxAudioRef.current.play().catch((error) => {
             console.error("Error playing audio:", error);
         });
+    }
 
+    function updateOptionProps(optionId: number, props: OptionProps) {
+        setOptionProps((prev) => {
+            return {
+                ...prev,
+                [optionId]: props
+            }
+        })
+    }
+
+    function setOptionCorrect(optionId: number, enabled: boolean): void {
+        updateOptionProps(optionId, {
+            labelValue: `✅ ${optionProps[optionId].labelValue}`,
+            className: optionProps[optionId].className,
+            enabled
+        })
+    }
+
+    function setOptionIncorrect(optionId: number, enabled: boolean): void {
+        updateOptionProps(optionId, {
+            labelValue: `❌ ${optionProps[optionId].labelValue}`,
+            className: optionProps[optionId].className.concat(" animate-wobble bg-npr-red"),
+            enabled
+        })
     }
 
     function handleAnswerClicked(option: Correspondent): void {
         const { is_answer, id } = option;
-        // setNumberAttempts(prev => ++prev)
         if (is_answer) {
             onAnswerClicked(true);
-            // setNumberCorrectAttempts(1);
             setSelectedAnswerLabel('Correct!');
             playAnswerAudio('CORRECT');
-            setOptionProps((prev) => {
-                return {
-                    ...prev,
-                    [id]: {
-                        ...prev[id],
-                        labelValue: `✅ ${prev[id].labelValue}`
-                    }
-                }
-            })
+            setOptionCorrect(id, false);
             endRound();
         } else {
             onAnswerClicked(false);
-            // setNumberIncorrectAttempts(prev => ++prev);
             playAnswerAudio('INCORRECT');
             setSelectedAnswerLabel('Incorrect!');
             setIncorrectAnswersCount((prev) => ++prev);
-            setOptionProps((prev) => {
-                return {
-                    ...prev,
-                    [id]: {
-                        labelValue: `❌ ${prev[id].labelValue}`,
-                        className: prev[id].className.concat(" animate-wobble bg-npr-red"),
-                        enabled: false
-                    }
-                }
-            })
+            setOptionIncorrect(id, false);
         }
     }
 
@@ -158,8 +157,6 @@ function QuestionPage(props: QuestionPageProps) {
         console.log(`handleRoundCompleted: ${possibleScore}, reason: ${completedReason}`);
         let adjustedScore = 0;
         if (completedReason === RoundCompletedReason.CORRECT_ANSWER) {
-            // onScoreUpdated((prev) => possibleScore + prev);
-            // setRoundScore(possibleScore);
             adjustedScore = possibleScore;
         }
 
@@ -190,12 +187,10 @@ function QuestionPage(props: QuestionPageProps) {
     }
 
     function handleAudioIsLoading(isLoading: boolean) {
-        // console.log(`loading audio: ${isLoading}`)
         setAudioIsReady(!isLoading);
     }
 
     function handleAudioIsLoaded(isLoaded: boolean) {
-        // console.log(`loading audio: ${isLoaded}`)
         handleAudioIsLoading(!isLoaded);
         setAudioIsReady(isLoaded);
     }
@@ -215,9 +210,9 @@ function QuestionPage(props: QuestionPageProps) {
                 </div>
 
                 {/* Middle content grows to fill space between header and footer */}
-                <div className="flex flex-col flex-grow justify-center">
+                <div id="innerBodyContainer" className="flex flex-col flex-grow justify-center">
 
-                    <div className="flex flex-col h-1/3 sm:h-2/3  min-w-1/4 items-center justify-center">
+                    <div id="scoreTracker" className="flex flex-col h-1/3 sm:h-2/3  min-w-1/4 items-center justify-center">
                         <h3 className="text-base text-5xl font-semibold text-npr-light">Possible Score</h3>
                         <PossibleScoreTracker
                             maxIncorrectAnswers={3}
@@ -257,21 +252,23 @@ function QuestionPage(props: QuestionPageProps) {
 
                 <div
                     id="footerBar"
-                    className="flex flex-row justify-center gap-4 p-6 sm:rounded-b-lg bg-npr-blue-night shadow-md">
+                    className="flex flex-row justify-center gap-4 p-6 bg-npr-blue-night sm:rounded-b-lg sm:shadow-md">
                     {isBrowserMobile && <Button
                         disabled={roundState !== GameState.NOT_STARTED}
                         onClick={handlePlayAudioClicked}
                         id="continueBtn"
                         size="lg"
-                        variant={"navigation"}>
-                        Play Audio
+                        variant={"navigation"}
+                        className={"w-1/2"}>
+                        <Play fill="#ffffff" className="size-6" />
                     </Button>}
                     <Button
                         disabled={roundState !== GameState.FINISHED}
                         onClick={onContinueClicked}
                         id="continueBtn"
                         size="lg"
-                        variant={"navigation"}>
+                        variant={"navigation"}
+                        className={"w-1/2 sm:w-1/4"}>
                         Continue
                     </Button>
                     <audio ref={quizAudioRef} />
@@ -314,7 +311,7 @@ function CurrentScoreTracker({ score }: { score: number }) {
 
 function SelectedAnswerLabel({ value }: { value: string }) {
     return (
-        <div className="flex w-full justify-center items-center">
+        <div className="flex w-full justify-center items-center p-2">
             <p className="min-h-[2rem] text-2xl font-semibold text-npr-light">{value}</p>
         </div>
     )

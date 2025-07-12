@@ -108,7 +108,7 @@ const AudioWaveformContainer: React.FC<OscilloscopeProps> = ({hidden = false, au
 
 
     return (
-        <div className={`flex flex-col items-center min-h-[2rem]`}>
+        <div className={`flex flex-col items-center min-h-[50px]`}>
             {showVisual && <canvas
                 ref={canvasRef}
                 width={width}
