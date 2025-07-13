@@ -30,16 +30,17 @@ interface OptionProps {
     labelValue: string;
     className: string;
     enabled: boolean;
+    isAnswer: boolean;
 }
 
 
 
 function QuestionPage(props: QuestionPageProps) {
+    const { questionNumber, numberOfQuestions, totalScore, onContinueClicked, data, onAnswerClicked } = props;
+    const [roundState, setRoundState] = useState<GameState>(GameState.NOT_STARTED);
     const screenSize: ScreenSize = useScreenSize();
     const quizAudioRef = useRef<HTMLAudioElement | null>(null);
     const soundFxAudioRef = useRef<HTMLAudioElement | null>(null);
-    const [roundState, setRoundState] = useState<GameState>(GameState.NOT_STARTED);
-    const { questionNumber, numberOfQuestions, totalScore, onContinueClicked, data, onAnswerClicked } = props;
     const [incorrectAnswersCount, setIncorrectAnswersCount] = useState<number>(0);
     const [audioUrl, setAudioUrl] = useState<string | undefined>(undefined);
     const [audioIsReady, setAudioIsReady] = useState(false);
@@ -87,7 +88,8 @@ function QuestionPage(props: QuestionPageProps) {
             optionProps[option.id] = {
                 labelValue: option.full_name,
                 className: "",
-                enabled: true
+                enabled: true,
+                isAnswer: option.is_answer
             }
         })
 
@@ -121,15 +123,18 @@ function QuestionPage(props: QuestionPageProps) {
     }
 
     function setOptionCorrect(optionId: number, enabled: boolean): void {
+        const option = optionProps[optionId]
         updateOptionProps(optionId, {
-            labelValue: `✅ ${optionProps[optionId].labelValue}`,
-            className: optionProps[optionId].className,
+            ...option,
+            labelValue: `✅ ${option.labelValue}`,
             enabled
         })
     }
 
     function setOptionIncorrect(optionId: number, enabled: boolean): void {
+        const option = optionProps[optionId]
         updateOptionProps(optionId, {
+            ...option,
             labelValue: `❌ ${optionProps[optionId].labelValue}`,
             className: optionProps[optionId].className.concat(" animate-wobble bg-npr-red"),
             enabled
@@ -154,8 +159,13 @@ function QuestionPage(props: QuestionPageProps) {
     }
 
     function handleRoundCompleted(possibleScore: number, completedReason: RoundCompletedReason) {
+        function setCorrectAnswer() {
+            for (const [k, v] of Object.entries(optionProps)) {
+                if (v.isAnswer)
+                    setOptionCorrect(Number(k), false)
+            }
+        }
 
-        console.log(`handleRoundCompleted: ${possibleScore}, reason: ${completedReason}`);
         let adjustedScore = 0;
         if (completedReason === RoundCompletedReason.CORRECT_ANSWER) {
             adjustedScore = possibleScore;
@@ -163,8 +173,10 @@ function QuestionPage(props: QuestionPageProps) {
 
         if (completedReason === RoundCompletedReason.TIME_EXPIRED) {
             setSelectedAnswerLabel(`Time's up!`)
+            setCorrectAnswer()
         } else if (completedReason === RoundCompletedReason.MAX_INCORRECT_ANSWERS) {
             setSelectedAnswerLabel('Oops :(')
+            setCorrectAnswer()
         }
 
         if (roundIsActive()) {
