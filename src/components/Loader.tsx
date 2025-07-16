@@ -4,7 +4,7 @@ const Loader: React.FC<{ className?: string }> = ({ className = "" }) => (
   <div role="status" className={className}>
     <svg
       aria-hidden="true"
-      className="w-8 h-8 text-gray-200 animate-spin fill-npr-blue"
+      className="h-12 w-12 sm:w-24 sm:h-24 text-npr-light animate-spin fill-npr-blue"
       viewBox="0 0 100 101"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"

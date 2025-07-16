@@ -13,6 +13,7 @@ import { PossibleScoreTracker } from "@/components/PossibleScoreTracker";
 import { RoundCompletedReason } from "@/types/roundCompletedReason";
 import type { RoundResults } from "@/types/roundResults";
 import Banner from "@/components/ui/banner";
+import Loader from "@/components/Loader";
 
 
 
@@ -224,15 +225,18 @@ function QuestionPage(props: QuestionPageProps) {
 
                 {/* Middle content grows to fill space between header and footer */}
                 <div id="innerBodyContainer" className="flex flex-col flex-grow justify-center">
-
                     <div id="scoreTracker" className="flex flex-col h-1/3 sm:h-2/3  min-w-1/4 items-center justify-center">
-                        <h3 className="text-base text-5xl font-semibold text-npr-light">Possible Score</h3>
-                        <PossibleScoreTracker
-                            maxIncorrectAnswers={3}
-                            incorrectAnswersCount={incorrectAnswersCount}
-                            onRoundCompleted={handleRoundCompleted}
-                            roundIsActive={roundIsActive()}
-                        />
+
+                        {!audioIsReady ? <Loader /> : 
+                            <>
+                                <h3 className="text-base text-5xl font-semibold text-npr-light">Possible Score</h3>
+                                <PossibleScoreTracker
+                                    maxIncorrectAnswers={3}
+                                    incorrectAnswersCount={incorrectAnswersCount}
+                                    onRoundCompleted={handleRoundCompleted}
+                                    roundIsActive={roundIsActive()}
+                                />
+                            </>}
                     </div>
                     <div
                         id="bodyContainer"
@@ -288,12 +292,14 @@ function QuestionPage(props: QuestionPageProps) {
                 </div>
             </div>
             <audio
+                preload="auto"
                 crossOrigin="anonymous"
                 ref={quizAudioRef}
                 src={audioUrl}
                 className="hidden"
                 onLoadStart={() => handleAudioIsLoading(true)}
-                onLoadedData={() => handleAudioIsLoaded(true)}
+                // onLoadedData={() => handleAudioIsLoaded(true)}
+                onCanPlayThrough={() => handleAudioIsLoaded(true)}
                 onError={() => handleAudioIsLoading(false)} />
         </div>
     );
