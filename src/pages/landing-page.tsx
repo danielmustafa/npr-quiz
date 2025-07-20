@@ -8,7 +8,7 @@ function LandingPage({ onStartClicked }: { onStartClicked: () => void }) {
         <div className="flex flex-col min-h-screen justify-center items-center">
             <Banner />
             <h2 className="text-center p-4">
-                Think you're an NPR pro?  Listen to a news clip, guess the correct correspondent as fast as you can, and try to get the high score!
+                Think you're an NPR pro?  Listen to a news clip, guess the correct correspondent as fast as you can, and try to get a perfect score!
             </h2>
             <Button
                 variant={"navigation"}

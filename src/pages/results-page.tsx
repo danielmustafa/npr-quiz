@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import type { QuizResults } from '@/types/quizResults';
 import { useState, useEffect } from 'react';
 import Confetti from 'react-confetti';
+import { Star } from 'lucide-react';
 
 // NPR color palette from tailwind.config.js
 const nprColors = [
@@ -19,13 +20,16 @@ interface ResultsPageProps {
 
 function ResultsPage(props: ResultsPageProps) {
   const { onStartOverClicked, quizResults } = props;
-  const { totalScore, avgSpeedOfAnswer, avgAttemptPerQuestion, numberCorrectAttempts, numberOfQuestions } = quizResults
+  const { totalScore, avgSpeedOfAnswer, avgAttemptPerQuestion, numberCorrectAttempts, numberIncorrectAttempts, numberOfQuestions } = quizResults
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
     height: window.innerHeight,
   });
 
   function formatDecimal(val: number) { return Math.round(val * 100) / 100; }
+
+  const answeredAllCorrectly = numberCorrectAttempts === numberOfQuestions;
+  const noIncorrectAttempts = numberIncorrectAttempts === 0;
 
   useEffect(() => {
     const handleResize = () => {
@@ -45,11 +49,12 @@ function ResultsPage(props: ResultsPageProps) {
         width={windowSize.width}
         height={windowSize.height}
         colors={nprColors}
+        
       />
       <div id='resultsContainer' className="flex flex-col flex-grow justify-end sm:min-h-1/2">
         <div className="flex flex-col items-center justify-center w-full max-w-lg bg-npr-blue-dark rounded-lg shadow-lg p-6 gap-6">
           <h1 className="text-3xl sm:text-5xl font-bold text-npr-light text-center mb-2">
-            Thanks for playing!
+            {answeredAllCorrectly && noIncorrectAttempts ? "Perfect!" : "Thanks for playing!"}
           </h1>
           <div className="flex flex-col items-center justify-center w-full text-npr-light font-semibold gap-2">
             <span className="text-lg sm:text-xl text-npr-light font-medium mb-1">Final Score</span>
@@ -57,14 +62,24 @@ function ResultsPage(props: ResultsPageProps) {
 
             <div className="flex flex-row justify-between w-full">
               <span>Correct answers</span>
-              <span>{`${numberCorrectAttempts} / ${numberOfQuestions}`}</span>
+              <div className="flex flex-row gap-2">
+                <span>{`${numberCorrectAttempts} / ${numberOfQuestions}`}</span>
+                {answeredAllCorrectly && <SpinningStar />}
+              </div>
             </div>
             <div className="flex flex-row justify-between w-full">
-              <span>Avg speed of answer:</span>
+              <span>Incorrect attempts</span>
+              <div className="flex flex-row gap-2">
+                <span>{`${numberIncorrectAttempts}`}</span>
+                {noIncorrectAttempts && <SpinningStar />}
+              </div>
+            </div>
+            <div className="flex flex-row justify-between w-full">
+              <span>Average answer speed</span>
               <span>{`${formatDecimal(avgSpeedOfAnswer)}s`}</span>
             </div>
             <div className="flex flex-row justify-between w-full">
-              <span>Avg attempts per question:</span>
+              <span>Average attempts per question</span>
               <span>{`${formatDecimal(avgAttemptPerQuestion)}`}</span>
             </div>
 
@@ -101,6 +116,12 @@ function ResultsPage(props: ResultsPageProps) {
       </div>
     </div>
   );
+}
+
+const SpinningStar = () => {
+  return (
+    <Star fill='#FFD700' color='#FFD700' className='animate-[spin_linear_3s_infinite]' />
+  )
 }
 
 export default ResultsPage;
